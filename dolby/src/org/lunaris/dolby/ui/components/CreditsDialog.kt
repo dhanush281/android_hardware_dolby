@@ -104,7 +104,7 @@ fun CreditsDialog(
             githubUsername = "MrTopia",
             contribution = "Adding per-device dolby state memory",
             isHighlighted = true
-        )
+        ),
         Contributor(
             name = "Pablo Escobar",
             githubUsername = "pabloescobar-reborn",
