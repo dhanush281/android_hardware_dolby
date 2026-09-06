@@ -60,10 +60,10 @@ fun FloatingNavToolbar(
                     bottom = FloatingToolbarDefaults.ScreenOffset
                 )
                 .shadow(
-                    elevation = 8.dp,
+                    elevation = 12.dp,
                     shape = MaterialTheme.shapes.extraLarge,
-                    ambientColor = Color.Black.copy(alpha = 0.1f),
-                    spotColor = Color.Black.copy(alpha = 0.15f)
+                    ambientColor = MaterialTheme.colorScheme.scrim,
+                    spotColor = MaterialTheme.colorScheme.scrim
                 )
         ) {
             NavToolbarItem(
@@ -148,7 +148,7 @@ private fun NavToolbarItem(
             androidx.compose.foundation.shape.CircleShape,
             androidx.compose.foundation.shape.CircleShape
         ),
-        modifier = modifier.height(56.dp)
+        modifier = modifier.height(48.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
