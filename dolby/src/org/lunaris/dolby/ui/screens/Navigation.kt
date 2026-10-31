@@ -1,171 +1,173 @@
 /*
- * Copyright (C) 2024-2025 Lunaris AOSP
+ * Copyright (C) 2024-2026 Lunaris AOSP
  * SPDX-License-Identifier: Apache-2.0
  */
 
-package org.lunaris.dolby.ui.screens
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 
-import androidx.compose.foundation.ExperimentalFoundationApi
+package org.lunaris.dolby.ui.components
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
-import org.lunaris.dolby.ui.components.FloatingNavToolbar
-import org.lunaris.dolby.ui.viewmodel.AppProfileViewModel
-import org.lunaris.dolby.ui.viewmodel.DolbyViewModel
-import org.lunaris.dolby.ui.viewmodel.EqualizerViewModel
+import org.lunaris.dolby.R
+import org.lunaris.dolby.utils.HapticFeedbackHelper
+import org.lunaris.dolby.utils.rememberHapticFeedback
 
-sealed class Screen(val route: String) {
-    object Settings : Screen("settings")
-    object Equalizer : Screen("equalizer")
-    object Advanced : Screen("advanced")
-    object AppProfiles : Screen("app_profiles")
-    object ImportExport : Screen("import_export")
-}
-
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MainPagerScreen(
-    dolbyViewModel: DolbyViewModel,
-    equalizerViewModel: EqualizerViewModel,
-    navController: NavController
+fun FloatingNavToolbar(
+    currentRoute: String,
+    onNavigate: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val pagerState = rememberPagerState(
-        initialPage = 0,
-        pageCount = { 3 }
-    )
-    val coroutineScope = rememberCoroutineScope()
+    val haptic = rememberHapticFeedback()
+    val scope = rememberCoroutineScope()
+    val routes = listOf("settings", "equalizer", "advanced")
+    val selectedIndex = routes.indexOf(currentRoute).coerceAtLeast(0)
 
-    val currentFakeRoute = when (pagerState.currentPage) {
-        0 -> "settings"
-        1 -> "equalizer"
-        2 -> "advanced"
-        else -> "settings"
-    }
-
-    LaunchedEffect(pagerState.settledPage) {
-        if (pagerState.settledPage == 1) {
-            equalizerViewModel.loadEqualizer()
-        }
-    }
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize()
-        ) { page ->
-            when (page) {
-                0 -> ModernDolbySettingsScreen(
-                    viewModel = dolbyViewModel,
-                    navController = navController
-                )
-                1 -> ModernEqualizerScreen(
-                    viewModel = equalizerViewModel,
-                    navController = navController
-                )
-                2 -> ModernAdvancedSettingsScreen(
-                    viewModel = dolbyViewModel,
-                    navController = navController
+    Surface(
+        modifier = modifier
+            .widthIn(max = 440.dp)
+            .animateContentSize(MaterialTheme.motionScheme.defaultSpatialSpec()),
+        shape = RoundedCornerShape(32.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 0.dp,
+        tonalElevation = 2.dp,
+    ) {
+        Row(
+            modifier = Modifier.padding(6.dp).selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            routes.forEachIndexed { index, route ->
+                val selected = selectedIndex == index
+                NavToolbarItem(
+                    icon = when (route) {
+                        "equalizer" -> Icons.Rounded.GraphicEq
+                        "advanced" -> Icons.Rounded.Tune
+                        else -> Icons.Rounded.Home
+                    },
+                    label = stringResource(when (route) {
+                        "equalizer" -> R.string.equalizer
+                        "advanced" -> R.string.advanced
+                        else -> R.string.home
+                    }),
+                    selected = selected,
+                    onClick = {
+                        if (route != currentRoute) {
+                            scope.launch {
+                                haptic.performHaptic(HapticFeedbackHelper.HapticIntensity.CLICK)
+                            }
+                            onNavigate(route)
+                        }
+                    },
                 )
             }
         }
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(130.dp)
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            MaterialTheme.colorScheme.surfaceContainer
-                        )
-                    )
-                )
-        )
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .safeDrawingPadding(),
-            contentAlignment = Alignment.Center
-        ) {
-            FloatingNavToolbar(
-                currentRoute = currentFakeRoute,
-                onNavigate = { route ->
-                    coroutineScope.launch {
-                        when (route) {
-                            "settings" -> pagerState.animateScrollToPage(0)
-                            "equalizer" -> pagerState.animateScrollToPage(1)
-                            "advanced" -> pagerState.animateScrollToPage(2)
-                        }
-                    }
-                }
-            )
-        }
     }
 }
 
 @Composable
-fun DolbyNavHost(
-    dolbyViewModel: DolbyViewModel,
-    equalizerViewModel: EqualizerViewModel
+private fun NavToolbarItem(
+    icon: ImageVector,
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    val navController = rememberNavController()
-
-    NavHost(
-        navController = navController,
-        startDestination = "main_pager"
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.94f else 1f,
+        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+        label = "navigation_press",
+    )
+    val radius by animateDpAsState(
+        targetValue = if (pressed) 16.dp else 26.dp,
+        animationSpec = MaterialTheme.motionScheme.fastSpatialSpec(),
+        label = "navigation_shape",
+    )
+    val background by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primaryContainer
+            else Color.Transparent,
+        animationSpec = MaterialTheme.motionScheme.fastEffectsSpec(),
+        label = "navigation_color",
+    )
+    Row(
+        modifier = modifier
+            .sizeIn(minWidth = 52.dp, minHeight = 52.dp)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(RoundedCornerShape(radius))
+            .background(background)
+            .selectable(
+                selected = selected,
+                interactionSource = interaction,
+                indication = LocalIndication.current,
+                role = Role.Tab,
+                onClick = onClick,
+            )
+            .semantics { contentDescription = label }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        composable("main_pager") {
-            MainPagerScreen(
-                dolbyViewModel = dolbyViewModel,
-                equalizerViewModel = equalizerViewModel,
-                navController = navController
+        CompositionLocalProvider(
+            LocalContentColor provides if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                modifier = Modifier.size(22.dp),
             )
-        }
-        
-        composable(Screen.AppProfiles.route) {
-            val context = LocalContext.current
-            val appProfileViewModel: AppProfileViewModel = viewModel(
-                factory = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.getInstance(
-                    context.applicationContext as android.app.Application
+            AnimatedVisibility(
+                visible = selected,
+                enter = fadeIn() + expandHorizontally(MaterialTheme.motionScheme.defaultSpatialSpec()),
+                exit = fadeOut() + shrinkHorizontally(),
+            ) {
+                Text(
+                    text = label,
+                    modifier = Modifier.padding(start = 6.dp).clearAndSetSemantics {},
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.labelLargeEmphasized,
                 )
-            )
-            
-            AppProfileScreen(
-                viewModel = appProfileViewModel,
-                navController = navController
-            )
-        }
-        
-        composable(Screen.ImportExport.route) {
-            PresetImportExportScreen(
-                viewModel = equalizerViewModel,
-                navController = navController
-            )
+            }
         }
     }
 }
