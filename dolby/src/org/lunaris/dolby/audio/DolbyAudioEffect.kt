@@ -17,8 +17,14 @@ class DolbyAudioEffect(priority: Int, audioSession: Int) : AudioEffect(
     var dsOn: Boolean
         get() = getIntParam(EFFECT_PARAM_ENABLE) == 1
         set(value) {
+            // Never setEnabled(false): AudioFlinger sends STOP, the AIDL DAP
+            // drains and returns -ENODATA, EffectHalAidl treats that as
+            // DEAD_OBJECT and the instance cannot be enabled again.
+            if (value && (!hasControl() || !enabled)) {
+                checkStatus(setEnabled(true))
+            }
+            setBypass(!value)
             setIntParam(EFFECT_PARAM_ENABLE, if (value) 1 else 0)
-            enabled = value
         }
 
     var profile: Int
@@ -45,9 +51,27 @@ class DolbyAudioEffect(priority: Int, audioSession: Int) : AudioEffect(
         }
     }
 
+    fun setBypass(bypass: Boolean) {
+        DolbyConstants.dlog(TAG, "setBypass: $bypass")
+        try {
+            val buf = ByteArray(16)
+            int32ToByteArray(4, buf, 0)
+            int32ToByteArray(4, buf, 4)
+            int32ToByteArray(EFFECT_PARAM_SET_BYPASS, buf, 8)
+            int32ToByteArray(if (bypass) 1 else 0, buf, 12)
+            checkStatus(setParameter(EFFECT_PARAM_CPDP_VALUES, buf))
+        } catch (e: Exception) {
+            DolbyConstants.dlog(TAG, "setBypass failed or unsupported: ${e.message}")
+        }
+    }
+
     fun resetProfileSpecificSettings(profile: Int = this.profile) {
         DolbyConstants.dlog(TAG, "resetProfileSpecificSettings: profile=$profile")
-        setIntParam(EFFECT_PARAM_RESET_PROFILE_SETTINGS, profile)
+        try {
+            setIntParam(EFFECT_PARAM_RESET_PROFILE_SETTINGS, profile)
+        } catch (e: RuntimeException) {
+            DolbyConstants.dlog(TAG, "resetProfileSpecificSettings failed: ${e.message}")
+        }
     }
 
     fun setDapParameter(param: DsParam, values: IntArray, profile: Int = this.profile) {
@@ -89,6 +113,7 @@ class DolbyAudioEffect(priority: Int, audioSession: Int) : AudioEffect(
 
         private const val EFFECT_PARAM_ENABLE = 0
         private const val EFFECT_PARAM_CPDP_VALUES = 5
+        private const val EFFECT_PARAM_SET_BYPASS = 18
         private const val EFFECT_PARAM_PROFILE = 0xA000000
         private const val EFFECT_PARAM_SET_PROFILE_PARAMETER = 0x1000000
         private const val EFFECT_PARAM_GET_PROFILE_PARAMETER = 0x1000005

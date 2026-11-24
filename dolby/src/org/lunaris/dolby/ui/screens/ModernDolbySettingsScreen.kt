@@ -7,6 +7,7 @@
 
 package org.lunaris.dolby.ui.screens
 
+import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -17,7 +18,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -156,74 +156,68 @@ private fun ModernDolbySettingsContent(
     bottomPadding: Dp,
     modifier: Modifier = Modifier
 ) {
-    BoxWithConstraints(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-        val twoColumns = maxWidth / LocalDensity.current.fontScale >= 720.dp
-        LazyColumn(
-            modifier = Modifier.widthIn(max = 1040.dp).fillMaxWidth(),
-            state = listState,
-            contentPadding = PaddingValues(
-                start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp + bottomPadding,
-            ),
-        ) {
-            item(key = "heading") {
-                DolbyPageHeading(
-                    title = stringResource(R.string.dolby_title),
-                    subtitle = stringResource(R.string.dolby_summary),
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        state = listState,
+        contentPadding = PaddingValues(
+            start = 20.dp, top = 12.dp, end = 20.dp, bottom = 12.dp + bottomPadding,
+        ),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
+    ) {
+        item {
+            DolbyPageHeading(
+                title = stringResource(R.string.dolby_title),
+                subtitle = stringResource(R.string.dolby_summary),
+            )
+        }
+        item {
+            DolbyMainCard(
+                enabled = state.settings.enabled,
+                onEnabledChange = { viewModel.setDolbyEnabled(it) }
+            )
+        }
+
+        item {
+            NotificationListenerPermissionCard()
+        }
+
+        item {
+            AnimatedVisibility(
+                visible = state.settings.enabled,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                ModernProfileSelector(
+                    currentProfile = state.settings.currentProfile,
+                    onProfileChange = { viewModel.setProfile(it) }
                 )
             }
-            item(key = "power") {
-                Box(Modifier.padding(top = 12.dp)) {
-                    DolbyMainCard(
-                        enabled = state.settings.enabled,
-                        onEnabledChange = { viewModel.setDolbyEnabled(it) },
-                    )
-                }
-            }
-            if (state.settings.enabled) {
-                item(key = "sound_controls") {
-                    val profiles: @Composable () -> Unit = {
-                        ModernProfileSelector(
-                            currentProfile = state.settings.currentProfile,
-                            onProfileChange = { viewModel.setProfile(it) },
-                        )
-                    }
-                    val equalizer: @Composable () -> Unit = {
-                        ModernIeqSelector(
-                            currentPreset = state.profileSettings.ieqPreset,
-                            onPresetChange = { viewModel.setIeqPreset(it) },
-                        )
-                    }
-                    val showEqualizer = state.settings.currentProfile != 0
-                    if (twoColumns && showEqualizer) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        ) {
-                            Box(Modifier.weight(1f)) { profiles() }
-                            Box(Modifier.weight(1f)) { equalizer() }
-                        }
-                    } else {
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            profiles()
-                            if (showEqualizer) equalizer()
-                        }
-                    }
-                }
-            }
-            item(key = "notification_access") {
-                NotificationListenerPermissionCard(modifier = Modifier.padding(top = 16.dp))
-            }
-            if (state.settings.enabled) {
-                item(key = "app_profiles") {
-                    AppProfileSettingsCard(
-                        onManageClick = { navController.navigate("app_profiles") },
-                        modifier = Modifier.padding(top = 16.dp),
-                    )
-                }
+        }
+
+        item {
+            AnimatedVisibility(
+                visible = state.settings.enabled && state.settings.currentProfile != 0,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                ModernIeqSelector(
+                    currentPreset = state.profileSettings.ieqPreset,
+                    onPresetChange = { viewModel.setIeqPreset(it) }
+                )
             }
         }
+
+        item {
+            AnimatedVisibility(
+                visible = state.settings.enabled,
+                enter = fadeIn() + expandVertically(),
+                exit = fadeOut() + shrinkVertically()
+            ) {
+                AppProfileSettingsCard(
+                    onManageClick = { navController.navigate("app_profiles") }
+                )
+            }
+        }
+
     }
 }

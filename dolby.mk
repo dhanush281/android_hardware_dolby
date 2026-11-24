@@ -26,6 +26,11 @@ AUDIO_FEATURE_ENABLED_DS2_DOLBY_DAP := true
 
 # SEPolicy
 BOARD_VENDOR_SEPOLICY_DIRS += $(DOLBY_PATH)/sepolicy/vendor
+
+# Framework compatibility matrix for the AIDL DMS HAL
+DEVICE_FRAMEWORK_COMPATIBILITY_MATRIX_FILE += \
+    $(DOLBY_PATH)/configs/compatibility_matrix_dolby.xml \
+    $(DOLBY_PATH)/configs/compatibility_matrix_dolby_c2.xml
     
 # Configs
 PRODUCT_COPY_FILES += \
@@ -47,32 +52,13 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     DolbyFrameworksResCommon
 
-# Dolby Spatial Audio
-PRODUCT_COPY_FILES += \
-    $(DOLBY_PATH)/configs/android.hardware.sensor.dynamic.head_tracker.xml:$(TARGET_COPY_OUT_VENDOR)/etc/permissions/android.hardware.sensor.dynamic.head_tracker.xml \
-
-# Dolby Spatial Audio: optimize spatializer effect
-PRODUCT_PROPERTY_OVERRIDES += \
-       audio.spatializer.effect.util_clamp_min=300
-
-# Dolby Spatial Audio: declare use of spatial audio
-PRODUCT_PROPERTY_OVERRIDES += \
-       ro.audio.spatializer_enabled=true \
-       ro.audio.headtracking_enabled=true \
-       ro.audio.spatializer_transaural_enabled_default=false \
-       persist.vendor.audio.spatializer.speaker_enabled=true \
-
-# Dolby Spatial Audio Proprietary blobs
-PRODUCT_PACKAGES += \
-    libspatializerparamstorage \
-    libswspatializer
-    
-
 # Media (C2)
 PRODUCT_PACKAGES += \
     android.hardware.media.c2@1.0.vendor \
     android.hardware.media.c2@1.1.vendor \
     android.hardware.media.c2@1.2.vendor \
+    libcodec2_hidl@1.0.vendor \
+    libcodec2_hidl@1.1.vendor \
     libcodec2_hidl@1.2.vendor \
     libsfplugin_ccodec_utils.vendor \
     libcodec2_soft_common.vendor
@@ -87,6 +73,7 @@ PRODUCT_VENDOR_PROPERTIES += \
 # Dolby Props
 PRODUCT_VENDOR_PROPERTIES += \
     ro.vendor.dolby.dax.version=DAX3_3.7.0.8_r1 \
+    ro.vendor.dolby.dap_bypassed_on_tiny_volume=0 \
     vendor.audio.dolby.ds2.hardbypass=false \
     vendor.audio.dolby.ds2.enabled=false
 
@@ -101,53 +88,36 @@ PRODUCT_PACKAGES += \
 
 # Dolby Proprietary blobs
 PRODUCT_COPY_FILES += \
-    $(DOLBY_PATH)/proprietary/vendor/etc/init/vendor.dolby.hardware.dms@2.0-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/vendor.dolby.hardware.dms@2.0-service.rc
+    $(DOLBY_PATH)/proprietary/vendor/etc/init/dms-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/dms-service.rc \
+    $(DOLBY_PATH)/proprietary/vendor/etc/vintf/manifest/dms-service.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vintf/manifest/dms-service.xml
 
 PRODUCT_PACKAGES += \
     libdapparamstorage \
     libdlbdsservice \
     libdlbpreg \
-    vendor.dolby.hardware.dms@2.0-impl \
+    libdmshal \
+    vendor.dolby.dms-V1-ndk \
     vendor.dolby.hardware.dms@2.0 \
-    vendor.dolby.hardware.dms@2.0-service
+    vendor.dolby.dms.service
 
 # Codec2 (Dolby)
 PRODUCT_COPY_FILES += \
-    $(DOLBY_PATH)/proprietary/vendor/etc/init/vendor.dolby.media.c2@1.0-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/vendor.dolby.media.c2@1.0-service.rc
+    $(DOLBY_PATH)/proprietary/vendor/etc/init/vendor.dolby.media.c2-default-service-dax.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/vendor.dolby.media.c2-default-service-dax.rc \
+    $(DOLBY_PATH)/proprietary/vendor/etc/vintf/manifest/vendor.dolby.media.c2-default-service-dax.xml:$(TARGET_COPY_OUT_VENDOR)/etc/vintf/manifest/vendor.dolby.media.c2-default-service-dax.xml
 
 PRODUCT_PACKAGES += \
     libcodec2_soft_ac4dec \
     libcodec2_soft_ddpdec \
     libcodec2_store_dolby \
     libdeccfg \
-    vendor.dolby.media.c2@1.0-service
+    vendor.dolby.media.c2-default-service-dax
 
 # Dolby SoundFX Blobs
 PRODUCT_PACKAGES += \
-    libdlbvol \
-    libhwdap \
-    libswgamedap \
-    libswvqe \
-    libswdap
+    libaudio_aidl_conversion_common_ndk.vendor \
+    libaudio_aidl_conversion_common_ndk_prebuilt \
+    libdlbvolaidl \
+    libswdapaidl \
+    libswgamedapaidl
 
-# Dolby vision Proprietary blobs
-PRODUCT_COPY_FILES += \
-    $(DOLBY_PATH)/proprietary/vendor/etc/dolby_vision.cfg:$(TARGET_COPY_OUT_VENDOR)/etc/dolby_vision.cfg \
-    $(DOLBY_PATH)/proprietary/vendor/etc/init/vendor.dolbyvision.media.c2@1.0-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/vendor.dolbyvision.media.c2@1.0-service.rc
-
-PRODUCT_PACKAGES += \
-    c2.dolby.avc.dec \
-    c2.dolby.avc.sec.dec \
-    c2.dolby.client \
-    c2.dolby.egl \
-    c2.dolby.hevc.dec \
-    c2.dolby.hevc.sec.dec \
-    c2.dolby.store \
-    libdolbyottcameracontrol \
-    libdolbyvision \
-    dolbycodec2
-
-# Shim
-PRODUCT_PACKAGES += \
-    libcodec2_hidl_shim.vendor
 
