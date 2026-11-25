@@ -971,9 +971,9 @@ class DolbyRepository(private val context: Context) : AutoCloseable {
         @Volatile
         private var communicationBypassForced = false
         
-        private const val BASS_GAIN_MULTIPLIER = 1.4f
-        private const val MID_GAIN_MULTIPLIER = 1.3f
-        private const val TREBLE_GAIN_MULTIPLIER = 1.5f
+        private const val BASS_GAIN_MULTIPLIER = 0.9f
+        private const val MID_GAIN_MULTIPLIER = 1.0f
+        private const val TREBLE_GAIN_MULTIPLIER = 0.9f
         
         private val ATTRIBUTES_MEDIA = AudioAttributes.Builder()
             .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -996,16 +996,16 @@ class DolbyRepository(private val context: Context) : AutoCloseable {
         
         private val BASS_CURVES = listOf(
             floatArrayOf(
-                1.00f, 1.00f, 0.95f, 0.90f, 0.80f, 0.70f, 0.55f, 0.40f, 0.25f, 0.15f,
+                1.00f, 0.85f, 0.35f, 0.10f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f,
                 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f
             ),
             floatArrayOf(
-                1.20f, 1.15f, 1.05f, 0.90f, 0.70f, 0.55f, 0.40f, 0.25f, 0.10f, 0.05f,
+                1.15f, 0.85f, 0.25f, 0.05f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f,
                 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f
             ),
             floatArrayOf(
-                0.90f, 0.95f, 1.00f, 1.00f, 0.90f, 0.75f, 0.60f, 0.45f, 0.30f, 0.20f,
-                0.10f, 0.05f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f
+                0.85f, 1.00f, 0.55f, 0.20f, 0.05f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f,
+                0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f, 0.00f
             )
         )
     }
